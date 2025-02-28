@@ -25,18 +25,28 @@ struct TodayTaskRow: View {
     @EnvironmentObject var viewModel: HouseholdViewModel
     
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(task.title)
-                .font(.headline)
-            if let description = task.description {
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+        HStack {
+            VStack(alignment: .leading) {
+                Text(task.title)
+                    .font(.headline)
+                    .strikethrough(task.isCompleted)
+                if let description = task.description {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                if let room = viewModel.getRoomForTask(task) {
+                    Text("Raum: \(room.name)")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                }
             }
-            if let room = viewModel.getRoomForTask(task) {
-                Text("Raum: \(room.name)")
-                    .font(.caption)
-                    .foregroundColor(.blue)
+            Spacer()
+            Button(action: {
+                viewModel.toggleTaskCompletion(task)
+            }) {
+                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(task.isCompleted ? .green : .gray)
             }
         }
         .padding(.vertical, 4)

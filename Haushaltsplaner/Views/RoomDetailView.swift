@@ -4,11 +4,29 @@ struct RoomDetailView: View {
     let room: Room
     @EnvironmentObject var viewModel: HouseholdViewModel
     @State private var showingAddTask = false
+    @State private var isEditingName = false
+    @State private var editedName = ""
     
     var body: some View {
         List {
             Section(header: Text("Raum Details")) {
-                Text("Name: \(room.name)")
+                if isEditingName {
+                    TextField("Name", text: $editedName, onCommit: {
+                        viewModel.updateRoom(room, newName: editedName)
+                        isEditingName = false
+                    })
+                } else {
+                    HStack {
+                        Text("Name: \(room.name)")
+                        Spacer()
+                        Button(action: {
+                            editedName = room.name
+                            isEditingName = true
+                        }) {
+                            Image(systemName: "pencil")
+                        }
+                    }
+                }
                 if let description = room.description {
                     Text("Beschreibung: \(description)")
                 }

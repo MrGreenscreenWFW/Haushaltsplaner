@@ -277,4 +277,11 @@ class HouseholdViewModel: ObservableObject {
         }
         return rooms.first { $0.id == assignment.roomId }
     }
+    
+    func updateTask(_ updatedTask: Task) {
+        if let index = tasks.firstIndex(where: { $0.id == updatedTask.id }) {
+            tasks[index] = updatedTask
+            saveData()
+        }
+    }
 } 

@@ -2,18 +2,32 @@ import SwiftUI
 
 struct TaskRow: View {
     let task: Task
+    @State private var showingEditTask = false
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text(task.title)
-                .font(.headline)
-            if let description = task.description {
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(task.title)
+                        .font(.headline)
+                    if let description = task.description {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                Spacer()
+                Button(action: {
+                    showingEditTask = true
+                }) {
+                    Image(systemName: "pencil")
+                }
             }
         }
         .padding(.vertical, 4)
+        .sheet(isPresented: $showingEditTask) {
+            EditTaskView(task: task)
+        }
     }
 }
 
