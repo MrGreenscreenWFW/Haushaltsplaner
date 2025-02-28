@@ -29,9 +29,22 @@
 		3F8096F72D720B920096D5CF /* HaushaltsplanerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HaushaltsplanerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3FABDACA2D723B9B00776177 /* Exceptions for "Haushaltsplaner" folder in "Haushaltsplaner" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3F8096DC2D720B910096D5CF /* Haushaltsplaner */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3F8096DF2D720B910096D5CF /* Haushaltsplaner */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3FABDACA2D723B9B00776177 /* Exceptions for "Haushaltsplaner" folder in "Haushaltsplaner" target */,
+			);
 			path = Haushaltsplaner;
 			sourceTree = "<group>";
 		};
@@ -400,6 +413,7 @@
 				DEVELOPMENT_TEAM = 3P64ZK22D8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Haushaltsplaner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Haushaltsplaner;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -437,6 +451,7 @@
 				DEVELOPMENT_TEAM = 3P64ZK22D8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Haushaltsplaner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Haushaltsplaner;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
