@@ -7,16 +7,16 @@ struct RoomDetailView: View {
     
     var body: some View {
         List {
-            Section(header: Text("Room Details")) {
+            Section(header: Text("Raum Details")) {
                 Text("Name: \(room.name)")
                 if let description = room.description {
-                    Text("Description: \(description)")
+                    Text("Beschreibung: \(description)")
                 }
             }
             
-            Section(header: Text("Assigned Tasks")) {
+            Section(header: Text("Zugeordnete Aufgaben")) {
                 if viewModel.getTasksForRoom(room).isEmpty {
-                    Text("No tasks assigned")
+                    Text("Keine Aufgaben zugewiesen")
                         .foregroundColor(.secondary)
                 } else {
                     ForEach(viewModel.getTasksForRoom(room)) { task in
@@ -25,7 +25,7 @@ struct RoomDetailView: View {
                                 Button(role: .destructive) {
                                     viewModel.removeTaskAssignment(task: task, from: room)
                                 } label: {
-                                    Label("Remove", systemImage: "trash")
+                                    Label("Löschen", systemImage: "trash")
                                 }
                             }
                     }

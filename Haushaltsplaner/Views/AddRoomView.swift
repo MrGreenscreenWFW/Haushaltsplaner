@@ -9,9 +9,9 @@ struct AddRoomView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Room Details")) {
+                Section(header: Text("Raum Details")) {
                     TextField("Name", text: $name)
-                    TextField("Description", text: $description)
+                    TextField("Beschreibung", text: $description)
                 }
                 
                 Section {
@@ -26,8 +26,8 @@ struct AddRoomView: View {
                     .disabled(name.isEmpty)
                 }
             }
-            .navigationTitle("Add Room")
-            .navigationBarItems(trailing: Button("Cancel") {
+            .navigationTitle("Raum hinzufügen")
+            .navigationBarItems(trailing: Button("Abbrechen") {
                 dismiss()
             })
         }

@@ -9,13 +9,13 @@ struct AddTaskView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Task Details")) {
-                    TextField("Title", text: $title)
-                    TextField("Description", text: $description)
+                Section(header: Text("Aufgaben Details")) {
+                    TextField("Name", text: $title)
+                    TextField("Beschreibung", text: $description)
                 }
                 
                 Section {
-                    Button("Save") {
+                    Button("Speichern") {
                         let task = Task(
                             title: title,
                             description: description.isEmpty ? nil : description
@@ -26,8 +26,8 @@ struct AddTaskView: View {
                     .disabled(title.isEmpty)
                 }
             }
-            .navigationTitle("Add Task")
-            .navigationBarItems(trailing: Button("Cancel") {
+            .navigationTitle("Aufgabe hinzufügen")
+            .navigationBarItems(trailing: Button("Abbrechen") {
                 dismiss()
             })
         }

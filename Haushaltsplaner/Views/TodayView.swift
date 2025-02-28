@@ -7,7 +7,7 @@ struct TodayView: View {
         NavigationView {
             List {
                 if viewModel.getTodaysTasks().isEmpty {
-                    Text("No tasks scheduled for today")
+                    Text("Für heute sind keine aufgaben geplant")
                         .foregroundColor(.secondary)
                 } else {
                     ForEach(viewModel.getTodaysTasks()) { task in
@@ -15,7 +15,7 @@ struct TodayView: View {
                     }
                 }
             }
-            .navigationTitle("Today's Tasks")
+            .navigationTitle("Heutige Aufgaben")
         }
     }
 }
@@ -34,7 +34,7 @@ struct TodayTaskRow: View {
                     .foregroundColor(.secondary)
             }
             if let room = viewModel.getRoomForTask(task) {
-                Text("Room: \(room.name)")
+                Text("Raum: \(room.name)")
                     .font(.caption)
                     .foregroundColor(.blue)
             }

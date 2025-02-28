@@ -14,15 +14,15 @@ struct AddTaskToRoomView: View {
                 daySelectionSection
                 saveSection
             }
-            .navigationTitle("Add Task to Room")
-            .navigationBarItems(trailing: Button("Cancel") {
+            .navigationTitle("Aufgabe zu Raum hinzufügen")
+            .navigationBarItems(trailing: Button("Abbrechen") {
                 dismiss()
             })
         }
     }
     
     private var taskSelectionSection: some View {
-        Section(header: Text("Select Task")) {
+        Section(header: Text("Aufgabe auswählen")) {
             ForEach(viewModel.tasks) { task in
                 TaskRow(task: task)
                     .onTapGesture {
@@ -34,7 +34,7 @@ struct AddTaskToRoomView: View {
     }
     
     private var daySelectionSection: some View {
-        Section(header: Text("Select Days")) {
+        Section(header: Text("Tag auswählen")) {
             ForEach(WeekDay.allCases, id: \.self) { day in
                 Toggle(day.rawValue, isOn: Binding(
                     get: { selectedDays.contains(day) },
@@ -52,7 +52,7 @@ struct AddTaskToRoomView: View {
     
     private var saveSection: some View {
         Section {
-            Button("Save") {
+            Button("Speichern") {
                 if let task = selectedTask {
                     viewModel.addTaskAssignment(task: task, room: room, days: Array(selectedDays))
                     dismiss()
