@@ -74,6 +74,18 @@ class HouseholdViewModel: ObservableObject {
         if let index = tasks.firstIndex(where: { $0.id == task.id }) {
             tasks[index].isCompleted.toggle()
             tasks[index].lastCompletedDate = tasks[index].isCompleted ? Date() : nil
+            
+            // Aktualisiere das lastExecuted Datum für alle Zuweisungen dieser Aufgabe
+            if tasks[index].isCompleted {
+                for (i, assignment) in taskAssignments.enumerated() {
+                    if assignment.taskId == task.id {
+                        var updatedAssignment = assignment
+                        updatedAssignment.lastExecuted = Date()
+                        taskAssignments[i] = updatedAssignment
+                    }
+                }
+            }
+            
             saveData()
         }
     }
@@ -91,11 +103,12 @@ class HouseholdViewModel: ObservableObject {
         }
     }
     
-    func addTaskAssignment(task: Task, room: Room, days: [WeekDay]) {
+    func addTaskAssignment(task: Task, room: Room, days: [WeekDay], interval: TaskInterval = .weekly) {
         let assignment = TaskAssignment(
             taskId: task.id,
             roomId: room.id,
-            scheduledDays: Set(days)
+            scheduledDays: Set(days),
+            interval: interval
         )
         taskAssignments.append(assignment)
         saveData()
@@ -259,7 +272,17 @@ class HouseholdViewModel: ObservableObject {
         
         // Finde alle TaskAssignments für heute
         let todaysAssignments = taskAssignments.filter { assignment in
-            assignment.scheduledDays.contains(todayWeekDay)
+            // Prüfe ob der Wochentag passt
+            guard assignment.scheduledDays.contains(todayWeekDay) else { return false }
+            
+            // Wenn die Aufgabe noch nie ausgeführt wurde, zeige sie an
+            guard let lastExecuted = assignment.lastExecuted else { return true }
+            
+            // Berechne die vergangenen Wochen seit der letzten Ausführung
+            let weeksSinceLastExecution = calendar.dateComponents([.weekOfYear], from: lastExecuted, to: Date()).weekOfYear ?? 0
+            
+            // Prüfe ob das Intervall eingehalten wird
+            return weeksSinceLastExecution >= assignment.interval.rawValue
         }
         
         // Hole die entsprechenden Tasks
