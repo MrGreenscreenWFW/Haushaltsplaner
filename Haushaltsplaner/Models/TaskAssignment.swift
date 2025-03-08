@@ -4,7 +4,7 @@ struct TaskAssignment: Identifiable, Codable, Hashable {
     let id: UUID
     let taskId: UUID
     let roomId: UUID
-    let scheduledDays: Set<WeekDay>
+    var scheduledDays: Set<WeekDay>
     let interval: TaskInterval
     var lastExecuted: Date?
     

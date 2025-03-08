@@ -6,8 +6,8 @@ struct AddTaskView: View {
     @State private var title = ""
     @State private var description = ""
     @State private var selectedRooms: Set<Room> = []
-    @State private var selectedDays: [Room: Set<WeekDay>] = [:]
-    @State private var selectedIntervals: [Room: TaskInterval] = [:]
+    @State private var selectedDays: [UUID: Set<WeekDay>] = [:]
+    @State private var selectedIntervals: [UUID: TaskInterval] = [:]
     
     var body: some View {
         NavigationView {
@@ -25,16 +25,12 @@ struct AddTaskView: View {
                                 set: { isSelected in
                                     if isSelected {
                                         selectedRooms.insert(room)
-                                        if selectedDays[room] == nil {
-                                            selectedDays[room] = []
-                                        }
-                                        if selectedIntervals[room] == nil {
-                                            selectedIntervals[room] = .weekly
-                                        }
+                                        selectedDays[room.id] = Set<WeekDay>()
+                                        selectedIntervals[room.id] = .weekly
                                     } else {
                                         selectedRooms.remove(room)
-                                        selectedDays.removeValue(forKey: room)
-                                        selectedIntervals.removeValue(forKey: room)
+                                        selectedDays.removeValue(forKey: room.id)
+                                        selectedIntervals.removeValue(forKey: room.id)
                                     }
                                 }
                             )) {
@@ -43,8 +39,8 @@ struct AddTaskView: View {
                             
                             if selectedRooms.contains(room) {
                                 Picker("Intervall", selection: Binding(
-                                    get: { selectedIntervals[room] ?? .weekly },
-                                    set: { selectedIntervals[room] = $0 }
+                                    get: { selectedIntervals[room.id] ?? .weekly },
+                                    set: { selectedIntervals[room.id] = $0 }
                                 )) {
                                     ForEach(TaskInterval.allCases, id: \.self) { interval in
                                         Text(interval.description).tag(interval)
@@ -56,24 +52,17 @@ struct AddTaskView: View {
                                 HStack {
                                     ForEach(WeekDay.allCases, id: \.self) { day in
                                         Button(action: {
-                                            if var days = selectedDays[room] {
-                                                if days.contains(day) {
-                                                    days.remove(day)
-                                                } else {
-                                                    days.insert(day)
-                                                }
-                                                selectedDays[room] = days
-                                            }
+                                            toggleDay(day, for: room)
                                         }) {
                                             Text(day.shortLocalizedName)
                                                 .padding(4)
                                                 .background(
-                                                    selectedDays[room]?.contains(day) ?? false
+                                                    (selectedDays[room.id]?.contains(day) ?? false)
                                                     ? Color.blue
                                                     : Color.gray.opacity(0.2)
                                                 )
                                                 .foregroundColor(
-                                                    selectedDays[room]?.contains(day) ?? false
+                                                    (selectedDays[room.id]?.contains(day) ?? false)
                                                     ? .white
                                                     : .primary
                                                 )
@@ -97,19 +86,19 @@ struct AddTaskView: View {
                         
                         // Füge die Aufgabe zu den ausgewählten Räumen hinzu
                         for room in selectedRooms {
-                            if let days = selectedDays[room], !days.isEmpty {
+                            if let days = selectedDays[room.id], !days.isEmpty {
                                 viewModel.addTaskAssignment(
                                     task: task,
                                     room: room,
                                     days: Array(days),
-                                    interval: selectedIntervals[room] ?? .weekly
+                                    interval: selectedIntervals[room.id] ?? .weekly
                                 )
                             }
                         }
                         
                         dismiss()
                     }
-                    .disabled(title.isEmpty || selectedRooms.isEmpty || selectedRooms.allSatisfy { selectedDays[$0]?.isEmpty ?? true })
+                    .disabled(title.isEmpty || selectedRooms.isEmpty || selectedRooms.allSatisfy { selectedDays[$0.id]?.isEmpty ?? true })
                 }
             }
             .navigationTitle("Aufgabe hinzufügen")
@@ -118,4 +107,14 @@ struct AddTaskView: View {
             })
         }
     }
-} 
+    
+    private func toggleDay(_ day: WeekDay, for room: Room) {
+        var currentDays = selectedDays[room.id] ?? Set<WeekDay>()
+        if currentDays.contains(day) {
+            currentDays.remove(day)
+        } else {
+            currentDays.insert(day)
+        }
+        selectedDays[room.id] = currentDays
+    }
+}

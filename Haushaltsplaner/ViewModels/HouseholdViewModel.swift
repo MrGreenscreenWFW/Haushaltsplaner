@@ -21,9 +21,12 @@ class HouseholdViewModel: ObservableObject {
         let weekDayNames = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
         let today = weekDayNames[Calendar.current.component(.weekday, from: Date()) - 1]
         if let weekDay = WeekDay(rawValue: today) {
+            let todaysAssignments = taskAssignments.filter { assignment in
+                assignment.scheduledDays.contains(weekDay)
+            }
             return tasks.filter { task in
-                task.assignments.contains { assignment in
-                    assignment.scheduledDays.contains(weekDay)
+                todaysAssignments.contains { assignment in
+                    assignment.taskId == task.id
                 }
             }
         }
@@ -46,9 +49,7 @@ class HouseholdViewModel: ObservableObject {
     func deleteRoom(_ room: Room) {
         rooms.removeAll { $0.id == room.id }
         // Remove all task assignments for this room
-        for taskIndex in tasks.indices {
-            tasks[taskIndex].assignments.removeAll { $0.roomId == room.id }
-        }
+        taskAssignments.removeAll { $0.roomId == room.id }
         saveData()
     }
     
@@ -104,23 +105,37 @@ class HouseholdViewModel: ObservableObject {
     }
     
     func addTaskAssignment(task: Task, room: Room, days: [WeekDay], interval: TaskInterval = .weekly) {
+        print("Füge Task-Zuweisung hinzu - Task: \(task.title), Raum: \(room.name), Tage: \(days)")
+        
+        // Erstelle eine neue Zuweisung
         let assignment = TaskAssignment(
             taskId: task.id,
             roomId: room.id,
             scheduledDays: Set(days),
             interval: interval
         )
+        
+        // Entferne zuerst alle bestehenden Zuweisungen für diese Task und diesen Raum
+        taskAssignments.removeAll { 
+            $0.taskId == task.id && $0.roomId == room.id
+        }
+        
+        // Füge die neue Zuweisung hinzu
         taskAssignments.append(assignment)
+        print("Neue Zuweisung erstellt: \(assignment)")
+        
         saveData()
     }
     
     func removeTasksFromRoom(at offsets: IndexSet, roomId: UUID) {
-        for _ in offsets {
-            if let taskIndex = tasks.firstIndex(where: { task in
-                task.assignments.contains { $0.roomId == roomId }
-            }) {
-                tasks[taskIndex].assignments.removeAll { $0.roomId == roomId }
+        let tasksToRemove = tasks.enumerated()
+            .filter { index, task in
+                offsets.contains(index)
             }
+            .map { $0.1 }
+        
+        for task in tasksToRemove {
+            removeTaskAssignment(task: task, from: getRoom(for: roomId)!)
         }
         saveData()
     }
