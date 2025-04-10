@@ -6,12 +6,14 @@ struct AddTaskToRoomView: View {
     let room: Room
     @State private var selectedTask: Task?
     @State private var selectedInterval: TaskInterval = .weekly
+    @State private var selectedDays: Set<WeekDay> = []
     
     var body: some View {
         NavigationView {
             Form {
                 taskSelectionSection
                 intervalSelectionSection
+                daySelectionSection
                 saveSection
             }
             .navigationTitle("Aufgabe zu Raum hinzufügen")
@@ -36,6 +38,7 @@ struct AddTaskToRoomView: View {
                     selectedTask = task
                     if let assignment = viewModel.taskAssignments.first(where: { $0.taskId == task.id }) {
                         selectedInterval = assignment.interval
+                        selectedDays = assignment.scheduledDays
                     }
                 }
                 .background(selectedTask?.id == task.id ? Color.blue.opacity(0.2) : Color.clear)
@@ -54,21 +57,37 @@ struct AddTaskToRoomView: View {
         }
     }
     
+    private var daySelectionSection: some View {
+        Section(header: Text("Tage")) {
+            ForEach(WeekDay.allCases, id: \.self) { day in
+                Toggle(day.shortLocalizedName, isOn: Binding(
+                    get: { selectedDays.contains(day) },
+                    set: { isSelected in
+                        if isSelected {
+                            selectedDays.insert(day)
+                        } else {
+                            selectedDays.remove(day)
+                        }
+                    }
+                ))
+            }
+        }
+    }
+    
     private var saveSection: some View {
         Section {
             Button("Speichern") {
-                if let task = selectedTask,
-                   let assignment = viewModel.taskAssignments.first(where: { $0.taskId == task.id }) {
+                if let task = selectedTask {
                     viewModel.addTaskAssignment(
                         task: task,
                         room: room,
-                        days: Array(assignment.scheduledDays),
+                        days: Array(selectedDays),
                         interval: selectedInterval
                     )
                     dismiss()
                 }
             }
-            .disabled(selectedTask == nil)
+            .disabled(selectedTask == nil || selectedDays.isEmpty)
         }
     }
 } 

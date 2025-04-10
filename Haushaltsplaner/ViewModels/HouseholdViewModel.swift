@@ -11,6 +11,7 @@ class HouseholdViewModel: ObservableObject {
     private let roomsKey = "savedRooms"
     private let tasksKey = "savedTasks"
     private let settingsKey = "savedSettings"
+    private let taskAssignmentsKey = "savedTaskAssignments"
     
     init() {
         loadData()
@@ -115,7 +116,7 @@ class HouseholdViewModel: ObservableObject {
             interval: interval
         )
         
-        // Entferne zuerst alle bestehenden Zuweisungen für diese Task und diesen Raum
+        // Entferne nur die Zuweisung für diesen spezifischen Raum
         taskAssignments.removeAll { 
             $0.taskId == task.id && $0.roomId == room.id
         }
@@ -212,6 +213,10 @@ class HouseholdViewModel: ObservableObject {
             let settingsData = try JSONEncoder().encode(settings)
             UserDefaults.standard.set(settingsData, forKey: settingsKey)
             
+            // Task-Zuweisungen speichern
+            let taskAssignmentsData = try JSONEncoder().encode(taskAssignments)
+            UserDefaults.standard.set(taskAssignmentsData, forKey: taskAssignmentsKey)
+            
             // Benachrichtigungen aktualisieren
             scheduleNotifications()
         } catch {
@@ -249,6 +254,16 @@ class HouseholdViewModel: ObservableObject {
                 settings = .default
             }
         }
+        
+        // Task-Zuweisungen laden
+        if let taskAssignmentsData = UserDefaults.standard.data(forKey: taskAssignmentsKey) {
+            do {
+                taskAssignments = try JSONDecoder().decode([TaskAssignment].self, from: taskAssignmentsData)
+            } catch {
+                print("Fehler beim Laden der Task-Zuweisungen: \(error.localizedDescription)")
+                taskAssignments = []
+            }
+        }
     }
     
     // MARK: - Data Reset (nützlich für Debugging oder wenn der Benutzer alle Daten zurücksetzen möchte)
@@ -258,10 +273,12 @@ class HouseholdViewModel: ObservableObject {
         UserDefaults.standard.removeObject(forKey: roomsKey)
         UserDefaults.standard.removeObject(forKey: tasksKey)
         UserDefaults.standard.removeObject(forKey: settingsKey)
+        UserDefaults.standard.removeObject(forKey: taskAssignmentsKey)
         
         // Arrays zurücksetzen
         rooms = []
         tasks = []
+        taskAssignments = []
         settings = .default
         
         // Benachrichtigungen entfernen
