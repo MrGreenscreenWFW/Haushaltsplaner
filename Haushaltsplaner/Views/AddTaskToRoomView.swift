@@ -5,11 +5,13 @@ struct AddTaskToRoomView: View {
     @Environment(\.dismiss) var dismiss
     let room: Room
     @State private var selectedTask: Task?
+    @State private var selectedInterval: TaskInterval = .weekly
     
     var body: some View {
         NavigationView {
             Form {
                 taskSelectionSection
+                intervalSelectionSection
                 saveSection
             }
             .navigationTitle("Aufgabe zu Raum hinzufügen")
@@ -32,9 +34,23 @@ struct AddTaskToRoomView: View {
                 }
                 .onTapGesture {
                     selectedTask = task
+                    if let assignment = viewModel.taskAssignments.first(where: { $0.taskId == task.id }) {
+                        selectedInterval = assignment.interval
+                    }
                 }
                 .background(selectedTask?.id == task.id ? Color.blue.opacity(0.2) : Color.clear)
             }
+        }
+    }
+    
+    private var intervalSelectionSection: some View {
+        Section(header: Text("Intervall")) {
+            Picker("Intervall", selection: $selectedInterval) {
+                ForEach(TaskInterval.allCases, id: \.self) { interval in
+                    Text(interval.description).tag(interval)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
         }
     }
     
@@ -47,7 +63,7 @@ struct AddTaskToRoomView: View {
                         task: task,
                         room: room,
                         days: Array(assignment.scheduledDays),
-                        interval: assignment.interval
+                        interval: selectedInterval
                     )
                     dismiss()
                 }

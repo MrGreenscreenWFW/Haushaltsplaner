@@ -159,7 +159,24 @@ class HouseholdViewModel: ObservableObject {
         let calendar = Calendar.current
         let components = calendar.dateComponents([.hour, .minute], from: settings.notificationTime)
         
-        for task in tasks where !task.isCompleted {
+        // Bestimme den aktuellen Wochentag
+        let weekDayNames = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+        let today = weekDayNames[Calendar.current.component(.weekday, from: Date()) - 1]
+        guard let currentWeekDay = WeekDay(rawValue: today) else { return }
+        
+        // Filtere Aufgaben, die für heute geplant sind und nicht erledigt wurden
+        let todaysAssignments = taskAssignments.filter { assignment in
+            assignment.scheduledDays.contains(currentWeekDay)
+        }
+        
+        let tasksForToday = tasks.filter { task in
+            !task.isCompleted && todaysAssignments.contains { assignment in
+                assignment.taskId == task.id
+            }
+        }
+        
+        // Erstelle Benachrichtigungen nur für die Aufgaben von heute
+        for task in tasksForToday {
             let content = UNMutableNotificationContent()
             content.title = "Unerledigte Aufgabe"
             content.body = "Die Aufgabe '\(task.title)' wurde heute noch nicht erledigt."
