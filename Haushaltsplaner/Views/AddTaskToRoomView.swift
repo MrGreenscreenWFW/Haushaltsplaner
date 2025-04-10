@@ -5,13 +5,11 @@ struct AddTaskToRoomView: View {
     @Environment(\.dismiss) var dismiss
     let room: Room
     @State private var selectedTask: Task?
-    @State private var selectedDays: Set<WeekDay> = []
     
     var body: some View {
         NavigationView {
             Form {
                 taskSelectionSection
-                daySelectionSection
                 saveSection
             }
             .navigationTitle("Aufgabe zu Raum hinzufügen")
@@ -24,28 +22,18 @@ struct AddTaskToRoomView: View {
     private var taskSelectionSection: some View {
         Section(header: Text("Aufgabe auswählen")) {
             ForEach(viewModel.tasks) { task in
-                TaskRow(task: task)
-                    .onTapGesture {
-                        selectedTask = task
+                VStack(alignment: .leading) {
+                    TaskRow(task: task)
+                    if let assignment = viewModel.taskAssignments.first(where: { $0.taskId == task.id }) {
+                        Text("Tage: \(assignment.scheduledDays.map { $0.shortLocalizedName }.joined(separator: ", "))")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    .background(selectedTask?.id == task.id ? Color.blue.opacity(0.2) : Color.clear)
-            }
-        }
-    }
-    
-    private var daySelectionSection: some View {
-        Section(header: Text("Tag auswählen")) {
-            ForEach(WeekDay.allCases, id: \.self) { day in
-                Toggle(day.rawValue, isOn: Binding(
-                    get: { selectedDays.contains(day) },
-                    set: { isSelected in
-                        if isSelected {
-                            selectedDays.insert(day)
-                        } else {
-                            selectedDays.remove(day)
-                        }
-                    }
-                ))
+                }
+                .onTapGesture {
+                    selectedTask = task
+                }
+                .background(selectedTask?.id == task.id ? Color.blue.opacity(0.2) : Color.clear)
             }
         }
     }
@@ -53,12 +41,18 @@ struct AddTaskToRoomView: View {
     private var saveSection: some View {
         Section {
             Button("Speichern") {
-                if let task = selectedTask {
-                    viewModel.addTaskAssignment(task: task, room: room, days: Array(selectedDays))
+                if let task = selectedTask,
+                   let assignment = viewModel.taskAssignments.first(where: { $0.taskId == task.id }) {
+                    viewModel.addTaskAssignment(
+                        task: task,
+                        room: room,
+                        days: Array(assignment.scheduledDays),
+                        interval: assignment.interval
+                    )
                     dismiss()
                 }
             }
-            .disabled(selectedTask == nil || selectedDays.isEmpty)
+            .disabled(selectedTask == nil)
         }
     }
 } 
