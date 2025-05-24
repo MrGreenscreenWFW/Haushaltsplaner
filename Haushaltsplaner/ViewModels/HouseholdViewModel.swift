@@ -1,12 +1,14 @@
 import Foundation
 import Combine
 import UserNotifications
+import SwiftUI
 
 class HouseholdViewModel: ObservableObject {
     @Published var rooms: [Room] = []
     @Published var tasks: [Task] = []
     @Published var taskAssignments: [TaskAssignment] = []
     @Published var settings: Settings = .default
+    @Published var logMessages: [String] = []
     
     private let roomsKey = "savedRooms"
     private let tasksKey = "savedTasks"
@@ -16,6 +18,7 @@ class HouseholdViewModel: ObservableObject {
     init() {
         loadData()
         setupNotifications()
+        log("App gestartet")
     }
     
     var todaysTasks: [Task] {
@@ -73,19 +76,25 @@ class HouseholdViewModel: ObservableObject {
     }
     
     func toggleTaskCompletion(_ task: Task) {
+        print("Toggle Task Completion - Task: \(task.title)")
         if let index = tasks.firstIndex(where: { $0.id == task.id }) {
             tasks[index].isCompleted.toggle()
             tasks[index].lastCompletedDate = tasks[index].isCompleted ? Date() : nil
             
             // Aktualisiere das lastExecuted Datum für alle Zuweisungen dieser Aufgabe
             if tasks[index].isCompleted {
+                print("Task wurde als erledigt markiert - Aktualisiere Zuweisungen")
+                var updatedAssignments = taskAssignments
                 for (i, assignment) in taskAssignments.enumerated() {
                     if assignment.taskId == task.id {
+                        print("Aktualisiere Zuweisung für Raum ID: \(assignment.roomId)")
                         var updatedAssignment = assignment
                         updatedAssignment.lastExecuted = Date()
-                        taskAssignments[i] = updatedAssignment
+                        updatedAssignments[i] = updatedAssignment
                     }
                 }
+                taskAssignments = updatedAssignments
+                print("Anzahl der Zuweisungen nach Update: \(taskAssignments.count)")
             }
             
             saveData()
@@ -106,7 +115,7 @@ class HouseholdViewModel: ObservableObject {
     }
     
     func addTaskAssignment(task: Task, room: Room, days: [WeekDay], interval: TaskInterval = .weekly) {
-        print("Füge Task-Zuweisung hinzu - Task: \(task.title), Raum: \(room.name), Tage: \(days)")
+        log("Füge Task-Zuweisung hinzu - Task: \(task.title), Raum: \(room.name), Tage: \(days)")
         
         // Erstelle eine neue Zuweisung
         let assignment = TaskAssignment(
@@ -123,7 +132,7 @@ class HouseholdViewModel: ObservableObject {
         
         // Füge die neue Zuweisung hinzu
         taskAssignments.append(assignment)
-        print("Neue Zuweisung erstellt: \(assignment)")
+        log("Neue Zuweisung erstellt: \(assignment)")
         
         saveData()
     }
@@ -201,6 +210,20 @@ class HouseholdViewModel: ObservableObject {
     
     private func saveData() {
         do {
+            log("Speichere Daten - Anzahl der Task-Zuweisungen: \(taskAssignments.count)")
+            
+            // Überprüfe die Zuweisungen vor dem Speichern
+            for assignment in taskAssignments {
+                log("Zuweisung - Task ID: \(assignment.taskId), Raum ID: \(assignment.roomId)")
+                // Überprüfe, ob die referenzierten IDs noch existieren
+                if !tasks.contains(where: { $0.id == assignment.taskId }) {
+                    log("WARNUNG: Task ID \(assignment.taskId) existiert nicht mehr")
+                }
+                if !rooms.contains(where: { $0.id == assignment.roomId }) {
+                    log("WARNUNG: Raum ID \(assignment.roomId) existiert nicht mehr")
+                }
+            }
+            
             // Räume speichern
             let roomsData = try JSONEncoder().encode(rooms)
             UserDefaults.standard.set(roomsData, forKey: roomsKey)
@@ -217,20 +240,27 @@ class HouseholdViewModel: ObservableObject {
             let taskAssignmentsData = try JSONEncoder().encode(taskAssignments)
             UserDefaults.standard.set(taskAssignmentsData, forKey: taskAssignmentsKey)
             
+            // Synchronisiere UserDefaults
+            UserDefaults.standard.synchronize()
+            
+            log("Daten erfolgreich gespeichert")
+            
             // Benachrichtigungen aktualisieren
             scheduleNotifications()
         } catch {
-            print("Fehler beim Speichern der Daten: \(error.localizedDescription)")
+            log("Fehler beim Speichern der Daten: \(error.localizedDescription)")
         }
     }
     
     private func loadData() {
+        log("Lade Daten...")
         // Räume laden
         if let roomsData = UserDefaults.standard.data(forKey: roomsKey) {
             do {
                 rooms = try JSONDecoder().decode([Room].self, from: roomsData)
+                log("Räume erfolgreich geladen: \(rooms.count)")
             } catch {
-                print("Fehler beim Laden der Räume: \(error.localizedDescription)")
+                log("Fehler beim Laden der Räume: \(error.localizedDescription)")
                 rooms = []
             }
         }
@@ -239,8 +269,9 @@ class HouseholdViewModel: ObservableObject {
         if let tasksData = UserDefaults.standard.data(forKey: tasksKey) {
             do {
                 tasks = try JSONDecoder().decode([Task].self, from: tasksData)
+                log("Aufgaben erfolgreich geladen: \(tasks.count)")
             } catch {
-                print("Fehler beim Laden der Aufgaben: \(error.localizedDescription)")
+                log("Fehler beim Laden der Aufgaben: \(error.localizedDescription)")
                 tasks = []
             }
         }
@@ -249,8 +280,9 @@ class HouseholdViewModel: ObservableObject {
         if let settingsData = UserDefaults.standard.data(forKey: settingsKey) {
             do {
                 settings = try JSONDecoder().decode(Settings.self, from: settingsData)
+                log("Einstellungen erfolgreich geladen")
             } catch {
-                print("Fehler beim Laden der Einstellungen: \(error.localizedDescription)")
+                log("Fehler beim Laden der Einstellungen: \(error.localizedDescription)")
                 settings = .default
             }
         }
@@ -259,10 +291,13 @@ class HouseholdViewModel: ObservableObject {
         if let taskAssignmentsData = UserDefaults.standard.data(forKey: taskAssignmentsKey) {
             do {
                 taskAssignments = try JSONDecoder().decode([TaskAssignment].self, from: taskAssignmentsData)
+                log("Task-Zuweisungen erfolgreich geladen: \(taskAssignments.count)")
             } catch {
-                print("Fehler beim Laden der Task-Zuweisungen: \(error.localizedDescription)")
+                log("Fehler beim Laden der Task-Zuweisungen: \(error.localizedDescription)")
                 taskAssignments = []
             }
+        } else {
+            log("Keine gespeicherten Task-Zuweisungen gefunden")
         }
     }
     
@@ -297,9 +332,14 @@ class HouseholdViewModel: ObservableObject {
     
     // Neue Funktion zum Entfernen einer Task-Zuweisung
     func removeTaskAssignment(task: Task, from room: Room) {
+        log("Entferne Task-Zuweisung - Task: \(task.title), Raum: \(room.name)")
+        let beforeCount = taskAssignments.count
         taskAssignments.removeAll { assignment in
             assignment.taskId == task.id && assignment.roomId == room.id
         }
+        let afterCount = taskAssignments.count
+        log("Task-Zuweisungen vorher: \(beforeCount), nachher: \(afterCount)")
+        saveData()
     }
     
     // Verbesserte Funktion für die heutigen Tasks
@@ -354,6 +394,43 @@ class HouseholdViewModel: ObservableObject {
         if let index = tasks.firstIndex(where: { $0.id == updatedTask.id }) {
             tasks[index] = updatedTask
             saveData()
+        }
+    }
+    
+    // MARK: - Logging
+    
+    private func log(_ message: String) {
+        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .medium)
+        let logMessage = "[\(timestamp)] \(message)"
+        print(logMessage)
+        logMessages.append(logMessage)
+        
+        // Speichere Logs in einer Datei
+        if let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let logFileURL = documentsPath.appendingPathComponent("haushaltsplaner_logs.txt")
+            
+            do {
+                let logString = logMessages.joined(separator: "\n")
+                try logString.write(to: logFileURL, atomically: true, encoding: .utf8)
+            } catch {
+                print("Fehler beim Speichern der Logs: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func shareLogs() -> URL? {
+        if let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let logFileURL = documentsPath.appendingPathComponent("haushaltsplaner_logs.txt")
+            return logFileURL
+        }
+        return nil
+    }
+    
+    func clearLogs() {
+        logMessages.removeAll()
+        if let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let logFileURL = documentsPath.appendingPathComponent("haushaltsplaner_logs.txt")
+            try? FileManager.default.removeItem(at: logFileURL)
         }
     }
 } 
